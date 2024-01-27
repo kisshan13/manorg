@@ -7,6 +7,7 @@ import mongoose from "mongoose";
 import ClientSideError from "../classes/errors.js";
 
 function errorMiddleware(err, req, res, next) {
+    console.log(err)
     let errMessage = "";
     let status = 500;
     if (err instanceof ZodError) {
@@ -29,7 +30,8 @@ function errorMiddleware(err, req, res, next) {
 
     return res.status(status).json(new ApiResponse({
         status: status,
-        message: errMessage || err.message
+        message: errMessage || err.message,
+        error: err
     }))
 }
 

@@ -1,37 +1,44 @@
-import * as utils from "../../globals/utilities/index.js"
-import ApiResponse from "../../globals/utilities/api-response.js";
+import moment from "moment";
 
+import * as utils from "../../globals/utilities/index.js";
+import ApiResponse from "../../globals/utilities/api-response.js";
+import { ApiError } from "../../globals/utilities/errors.js";
+import PERMISSION from "../../globals/config/permission.js";
 
 import User from "../auth/schema.js";
-import * as userPipeline from "../auth/pipelines.js"
+import * as userPipeline from "../auth/pipelines.js";
+
+import Invites from "../invites/schema.js";
 
 import Organization from "./schema.js";
 import * as schemas from "./utils.js";
 
-import {generateOrganizationCode} from "./utils.js";
-import {ApiError} from "../../globals/utilities/errors.js";
-import PERMISSION from "../../globals/config/permission.js";
+import { generateOrganizationCode } from "./utils.js";
+import { invitePrefixes } from "./constants.js";
 
-const {requestHandler} = utils;
+const { requestHandler } = utils;
 
 export const create = requestHandler(async (req, res, next) => {
     const info = schemas.create.parse(req.body);
 
-
     const userInfo = res?.id ? await User.findById(res?.id) : null;
 
-    if(!userInfo) {
-        return res.status(400).json(new ApiResponse({
-            status: 400,
-            message: "No such used exists to create organization with."
-        }))
+    if (!userInfo) {
+        return res.status(400).json(
+            new ApiResponse({
+                status: 400,
+                message: "No such used exists to create organization with.",
+            })
+        );
     }
 
-    if(userInfo.organization) {
-        return res.status(400).json(new ApiResponse({
-            status: 400,
-            message: "Only one organization can be created at a time."
-        }))
+    if (userInfo.organization) {
+        return res.status(400).json(
+            new ApiResponse({
+                status: 400,
+                message: "Only one organization can be created at a time.",
+            })
+        );
     }
 
     const organization = new Organization({
@@ -41,27 +48,48 @@ export const create = requestHandler(async (req, res, next) => {
         ownedBy: userInfo._id,
     });
 
-    userInfo.organization = organization._id
-    userInfo.permissions = ["*"]
+    userInfo.organization = organization._id;
+    userInfo.permissions = ["*"];
 
     const [savedUser, saveOrg] = await Promise.all([
         organization.save(),
-        userInfo.save()
+        userInfo.save(),
     ]);
 
-    return res.status(201).json(new ApiResponse({
-        status: 201,
-        message: "Organization Created Successfully."
-    }));
+    return res.status(201).json(
+        new ApiResponse({
+            status: 201,
+            message: "Organization Created Successfully.",
+        })
+    );
 });
 
-export const inviteCreate = requestHandler(async (req, res,next) => {
+export const inviteCreate = requestHandler(async (req, res, next) => {
+    const { email, expiresIn } = schemas.inviteCreate.parse(req.body);
+    const { user } = await userPipeline.checkPermission({
+        userId: res?.id,
+        permission: [PERMISSION.invite.create, PERMISSION.invite.manage],
+    });
 
-    const {user} = await  userPipeline.checkPermission({userId: user, permission: [PERMISSION.invite.create, PERMISSION.invite.manage]});
+    const invite = new Invites({
+        organization: user.organization,
+        expiresIn: moment().add(expiresIn, "days"),
+        invitedBy: user.id,
+        inviteTo: email,
+        inviteCode: generateOrganizationCode(
+            invitePrefixes[Math.floor(Math.random() * invitePrefixes.length)]
+        ),
+    });
 
-    const organization = user?.organization ? await Organization.findById(user.organization).lean() : false
+    await invite.save();
 
-    if(!organization) {
-        throw new ApiError(400, "You're not in any organization.")
-    }
+    // TODO: Add mailing service to send the invite.
+    console.log(invite)
+    res.status(201).send(new ApiResponse({ status: 201, message: "Invite created successfully.", inviteCode: invite.inviteCode }));
+});
+
+export const info = requestHandler(async (req, res, next) => {
+    const user = await User.findById(res?.id).select("organization").populate("organization").lean()
+
+    res.send(user)
 })

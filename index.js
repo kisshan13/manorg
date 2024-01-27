@@ -1,5 +1,5 @@
 import express from "express";
-import {config} from "dotenv";
+import { config } from "dotenv";
 import * as url from 'url';
 
 import * as middlewares from "./globals/middlewares/index.js"
@@ -16,8 +16,7 @@ async function main() {
 
     app.use(express.json());
 
-    const modules = await loadAPIRoutes(app, {dirname: __dirname});
-
+    const modules = await loadAPIRoutes(app, { dirname: __dirname });
 
     app.listen(3000, () => {
         console.log("Server Running On Port 3000")

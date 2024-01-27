@@ -12,8 +12,13 @@ export const create = z.object({
     }),
 })
 
+export const inviteCreate = z.object({
+    expiresIn: z.number(),
+    email: z.string().email(),
+})
+
 export const generateOrganizationCode = (name) => {
-    const formattedText = inputText.replace(/\s/g, '').toUpperCase();
+    const formattedText = name.replace(/\s/g, '').toUpperCase();
     const randomNumber = Math.floor(Math.random() * 9000) + 1000;
     const code = formattedText.slice(0, 3) + randomNumber;
 

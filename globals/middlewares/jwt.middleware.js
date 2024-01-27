@@ -8,6 +8,8 @@ function jwtVerifier() {
         const info = jwt.verify(auth);
 
         res.id = info?.id;
+
+        next()
     })
 }
 

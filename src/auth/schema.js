@@ -28,7 +28,7 @@ const schema = new Schema({
     },
     organization: {
         type: mongoose.Types.ObjectId,
-        ref: 'Organization'
+        ref: 'Organizations'
     },
     designation: {
         type: mongoose.Types.ObjectId,
