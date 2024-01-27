@@ -10,12 +10,13 @@ export default () => {
 
     console.log(...authToken({blockOnError: true}))
     router.use(...authToken({ blockOnError: true }))
-  
 
     router.get("/hii", (req, res) => res.send("hello"))
     router.post("/create", controller.create);
     router.get("/info", controller.info);
+
     router.post("/invite", controller.inviteCreate);
+    router.get("/invite", controller.invites)
 
     return router
 }

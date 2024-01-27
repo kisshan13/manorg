@@ -15,6 +15,7 @@ import * as schemas from "./utils.js";
 
 import { generateOrganizationCode } from "./utils.js";
 import { invitePrefixes } from "./constants.js";
+import permission from "../../globals/config/permission.js";
 
 const { requestHandler } = utils;
 
@@ -92,4 +93,15 @@ export const info = requestHandler(async (req, res, next) => {
     const user = await User.findById(res?.id).select("organization").populate("organization").lean()
 
     res.send(user)
+})
+
+
+// Requires Permission: "INVITE-MANAGE"
+export const invites = requestHandler(async (req, res, next) => {
+    const {user} = await userPipeline.checkPermission({userId: res?.id, permission: [permission.invite.manage]});
+    console.log(user.organization)
+    const invites = await Invites.find({organization: user.organization}).limit(10).populate("invitedBy", "-password -permissions").lean();
+    console.log(invites)
+    res.status(200).json(new ApiResponse({status: 200, message: "Invites", data: {invites}}));
+
 })

@@ -1,10 +1,11 @@
 import database from "../../globals/config/database.js";
 import mongoose, {Schema} from "mongoose";
+import mongoPaginate from "mongoose-paginate-v2"
 
 const schema = new Schema({
     organization: {
         type: mongoose.Schema.ObjectId,
-        ref: "Organization",
+        ref: "Organizations",
         required: true
     },
     invitedBy: {
@@ -28,6 +29,7 @@ const schema = new Schema({
     }
 }, {timestamps: true});
 
+// Todo: Add Pagination.
 const Invites = database.model("invites", schema);
 
 export default Invites;
